@@ -1,0 +1,29 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: flux-oci-demo-nov-16
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  provider: generic
+  ref:
+    tag: latest
+  secretRef:
+    name: ghcr-auth
+  url: oci://ghcr.io/juozasg/manifests/flux-oci-demo-nov-16
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: flux-oci-demo-nov-16
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  path: ./
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-oci-demo-nov-16
+  targetNamespace: flux-system
