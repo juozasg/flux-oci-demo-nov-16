@@ -1,0 +1,55 @@
+name: Flux OCI Artifact
+
+env:
+  OCI_TARGET: ghcr.io/juozasg/manifests/flux-oci-demo-nov-16 # assumed to be on GHCR, ambient credentials are used
+  MANIFESTS_PATH: ./clusters/demo
+
+
+on:
+  push:
+    branches: [ main ] # Configure the branches which you want to run this workflow
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    permissions:
+      packages: write
+      id-token: write # needed for signing the images with GitHub OIDC Token **not production ready**
+      contents: read
+
+    name: "Build and Publish"
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # Checkout source code
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Use Flux to publish mkdocs build output as OCI
+    - name: Setup Flux CLI
+      uses: fluxcd/flux2/action@main
+
+    - name: Login to GHCR
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    # Make build published as Flux OCI artifact
+    - name: Flux push
+      id: push_oci
+      run: |
+        flux push artifact oci://${{ env.OCI_TARGET }}:${{ steps.docker_meta.outputs.version }} --path=${{ env.MANIFESTS_PATH }} \
+          --source="$(git config --get remote.origin.url)" \
+          --revision="$(git tag --points-at HEAD)/$(git rev-parse HEAD)" 2>&1 | tee tmp-digest.out
+          # Warning: This is not stable, flux CLI output may change
+        cat tmp-digest.out
+        DIGEST="$(grep '✔ artifact successfully pushed to' tmp-digest.out | awk '{print $6}')"
+        echo DIGEST=$DIGEST
+
+        echo "digest=$(grep '✔ artifact successfully pushed to' tmp-digest.out | awk '{print $6}')" >> $GITHUB_OUTPUT
+
+        flux tag artifact oci://${{ env.OCI_TARGET }}:${{ steps.docker_meta.outputs.version }} \
+          --tag latest
