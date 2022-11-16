@@ -12,6 +12,10 @@ spec:
   secretRef:
     name: ghcr-auth
   url: oci://ghcr.io/juozasg/manifests/flux-oci-demo-nov-16
+  verify:
+    provider: cosign
+    secretRef:
+      name: cosign-pub
 
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
