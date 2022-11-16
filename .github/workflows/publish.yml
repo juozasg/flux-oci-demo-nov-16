@@ -53,3 +53,21 @@ jobs:
 
         flux tag artifact oci://${{ env.OCI_TARGET }}:${{ steps.docker_meta.outputs.version }} \
           --tag latest
+
+          
+    - name: cosign-installer
+      uses: sigstore/cosign-installer@v2.8.1
+      
+    - name: Write signing key to disk
+      run: 'echo "$KEY" > cosign.key'
+      shell: bash
+      env:
+        KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+    
+    - name: Sign the published OCI image
+      env:
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      run: cosign sign --key cosign.key ${{ steps.push_oci.outputs.digest }}
+
+
+      
