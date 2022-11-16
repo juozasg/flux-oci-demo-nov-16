@@ -8,7 +8,7 @@ spec:
   gitImplementation: go-git
   interval: 1m0s
   ref:
-    branch: master
+    tag: 6.2.2
   url: https://github.com/stefanprodan/podinfo
 
 ---
